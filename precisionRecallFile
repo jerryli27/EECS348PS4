@@ -1,2 +1,2 @@
-precision,recall,f1
-0.723427515842,0.842982546918,0.778642558948
+            if tokenCopy.lower() in self.neg_dict.keys() or tokenCopy.upper() in self.neg_dict.keys() or tokenCopy.title() in self.neg_dict.keys():
+                neg_pred+=math.log(self.neg_dict[token])  
