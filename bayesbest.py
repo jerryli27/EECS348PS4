@@ -92,7 +92,7 @@ class Bayes_Classifier:
         # Therefore in this improvement attempt, we only classify the text after "but" and "however"
         # First, we make a copy of the tokens that contains all lowercase words to find the index of any "but" or "after"
         tokensCopy = copy.deepcopy(tokens)
-        for words in tokens:
+        for words in tokensCopy:
             words = words.lower()
         if "but" in tokensCopy:
             butIndex = tokensCopy.index("but")
@@ -107,32 +107,77 @@ class Bayes_Classifier:
             posCount = 1
             if token in self.pos_dict.keys():
                 posCount += self.pos_dict[token]
+<<<<<<< HEAD
             if tokenCopy.lower() in self.pos_dict.keys():
                 posCount += self.pos_dict[tokenCopy.lower()]
             if tokenCopy.title() in self.pos_dict.keys():
                 posCount += self.pos_dict[tokenCopy.title()]
+=======
+            if token.isupper():
+                if tokenCopy.lower() in self.pos_dict.keys():
+                    posCount += self.pos_dict[tokenCopy.lower()]
+                if tokenCopy.title() in self.pos_dict.keys():
+                    posCount += self.pos_dict[tokenCopy.title()]
+            if token.islower():
+                if tokenCopy.upper() in self.pos_dict.keys():
+                    posCount += self.pos_dict[tokenCopy.upper()]
+                if tokenCopy.title() in self.pos_dict.keys():
+                    posCount += self.pos_dict[tokenCopy.title()]
+            if token.istitle():
+                if tokenCopy.upper() in self.pos_dict.keys():
+                    posCount += self.pos_dict[tokenCopy.upper()]
+                if tokenCopy.lower() in self.pos_dict.keys():
+                    posCount += self.pos_dict[tokenCopy.lower()]
+
+>>>>>>> origin/master
             negCount = 1
             if token in self.neg_dict.keys():
                 negCount += self.neg_dict[token]
-            if tokenCopy.lower() in self.neg_dict.keys():
-                negCount += self.neg_dict[tokenCopy.lower()]
-            if tokenCopy.title() in self.neg_dict.keys():
-                negCount += self.neg_dict[tokenCopy.title()]
-            # All-cap means emphasizing, in this improvement attempt we increase the "weight" of all-capped words
             if token.isupper():
-                # if token appears significantly more in pos_dict than in neg_dict, increase its weight in pos_pred
-                if float(posCount)/negCount > 1.2:
-                    pos_pred = pos_pred + math.log(posCount) + math.log(2)
-                    neg_pred += math.log(negCount)
-                elif float(negCount)/posCount > 1.2:
-                    pos_pred += math.log(posCount)
-                    neg_pred = neg_pred + math.log(negCount) + math.log(2)
-            else:
-                if token in self.pos_dict.keys() or tokenCopy.title() in self.pos_dict.keys():
-                    pos_pred+=math.log(posCount)
-                if token in self.neg_dict.keys() or tokenCopy.title() in self.neg_dict.keys():
-                    neg_pred+=math.log(negCount)
-            #else is just *=1, which does nothing
+                if tokenCopy.lower() in self.neg_dict.keys():
+                    negCount += self.neg_dict[tokenCopy.lower()]
+                if tokenCopy.title() in self.neg_dict.keys():
+                    negCount += self.neg_dict[tokenCopy.title()]
+            if token.islower():
+                if tokenCopy.upper() in self.neg_dict.keys():
+                    negCount += self.neg_dict[tokenCopy.upper()]
+                if tokenCopy.title() in self.neg_dict.keys():
+                    negCount += self.neg_dict[tokenCopy.title()]
+            if token.istitle():
+                if tokenCopy.upper() in self.neg_dict.keys():
+                    negCount += self.neg_dict[tokenCopy.upper()]
+                if tokenCopy.lower() in self.neg_dict.keys():
+                    negCount += self.neg_dict[tokenCopy.lower()]
+
+
+            # # All-cap means emphasizing, in this improvement attempt we increase the "weight" of all-capped words
+            # if token.isupper():
+            #     # if token appears significantly more in pos_dict than in neg_dict, increase its weight in pos_pred
+            #     if float(posCount)/negCount > 2:
+            #         pos_pred = pos_pred + math.log(posCount) + math.log(2)
+            #         neg_pred += math.log(negCount)
+            #     elif float(negCount)/posCount > 2:
+            #         pos_pred += math.log(posCount)
+            #         neg_pred = neg_pred + math.log(negCount) + math.log(2)
+            #     else:
+            #         if token in self.pos_dict.keys() or tokenCopy.title() in self.pos_dict.keys() or tokenCopy.lower() in self.pos_dict.keys():
+            #             pos_pred+=math.log(posCount)
+            #         if token in self.neg_dict.keys() or tokenCopy.title() in self.neg_dict.keys() or tokenCopy.lower() in self.neg_dict.keys():
+            #             neg_pred+=math.log(negCount)
+            # else:
+            #     if token in self.pos_dict.keys() or tokenCopy.title() in self.pos_dict.keys():
+            #         pos_pred+=math.log(posCount)
+            #     if token in self.neg_dict.keys() or tokenCopy.title() in self.neg_dict.keys():
+            #         neg_pred+=math.log(negCount)
+            # #else is just *=1, which does nothing
+
+
+            if tokenCopy.lower() in self.pos_dict.keys() or tokenCopy.upper() in self.pos_dict.keys() or tokenCopy.title() in self.pos_dict.keys():
+                pos_pred+=math.log(posCount)
+            if tokenCopy.lower() in self.neg_dict.keys() or tokenCopy.upper() in self.neg_dict.keys() or tokenCopy.title() in self.neg_dict.keys():
+                neg_pred+=math.log(negCount)
+
+
         #Need to code a Neutral zone
         print 'pos_pred = '+str(pos_pred)
         print 'neg_pred = '+str(neg_pred)
