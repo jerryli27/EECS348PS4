@@ -104,14 +104,14 @@ class Bayes_Classifier:
         for token in tokens:
             tokenCopy = copy.deepcopy(token)    # for avoiding calling string functions on original token
             # count the total appearance of token in all form (abc, Abc, ABC) in pos_dict and neg_dict
-            posCount = 0
+            posCount = 1
             if token in self.pos_dict.keys():
                 posCount += self.pos_dict[token]
             if tokenCopy.lower() in self.pos_dict.keys():
                 posCount += self.pos_dict[tokenCopy.lower()]
             if tokenCopy.title() in self.pos_dict.keys():
                 posCount += self.pos_dict[tokenCopy.title()]
-            negCount = 0
+            negCount = 1
             if token in self.neg_dict.keys():
                 negCount += self.neg_dict[token]
             if tokenCopy.lower() in self.neg_dict.keys():
