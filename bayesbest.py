@@ -1,10 +1,13 @@
-# Name: 
+
+    # Name:
 # Date:
 # Description:
 #
 #
 
-import math, os, pickle, re, random, copy
+
+
+import math, os, pickle, re, random,copy
 
 class Bayes_Classifier:
 
@@ -39,7 +42,7 @@ class Bayes_Classifier:
         # Used for the Kth Cross Validation. K ranges from 0 to 9
         """Trains the Naive Bayes Sentiment Classifier."""
         lFileList = []
-        for fFileObj in os.walk("movies_reviews/"):
+        for fFileObj in os.walk("../movies_reviews/"):
             lFileList = fFileObj[2]
             break
         if k>=0 and k<10:
@@ -52,7 +55,7 @@ class Bayes_Classifier:
             #str(re.match('(?:movies\-)\d+(?:\-)', fileName).group(1))
             # If bad review
             if star=='1':
-                tokens=self.tokenize(self.loadFile("movies_reviews/"+fileName))
+                tokens=self.tokenize(self.loadFile("../movies_reviews/"+fileName))
                 for token in tokens:
                     if token in self.neg_dict.keys():
                         self.neg_dict[token]+=1
@@ -60,7 +63,7 @@ class Bayes_Classifier:
                         self.neg_dict[token]=1
                     self.neg_total+=1
             elif star=='5':
-                tokens=self.tokenize(self.loadFile("movies_reviews/"+fileName))
+                tokens=self.tokenize(self.loadFile("../movies_reviews/"+fileName))
                 for token in tokens:
                     if token in self.pos_dict.keys():
                         self.pos_dict[token]+=1
@@ -71,6 +74,7 @@ class Bayes_Classifier:
         self.save(self.neg_dict,neg_dict_file_name)
         print 'pos_dict have '+str(len(self.pos_dict))+' words'
         print 'neg_dict have '+str(len(self.neg_dict))+' words'
+
 
     def classify(self, sText):
         """Given a target string sText, this function returns the most likely document
@@ -101,19 +105,19 @@ class Bayes_Classifier:
             tokenCopy = copy.deepcopy(token)    # for avoiding calling string functions on original token
             # count the total appearance of token in all form (abc, Abc, ABC) in pos_dict and neg_dict
             posCount = 0
-            if token in self.pos_dict.keys:
+            if token in self.pos_dict.keys():
                 posCount += self.pos_dict[token]
-            if tokenCopy.lower() in self.pos_dict.keys:
-                posCount += self.pos_dict[tokenCopy.lower]
-            if tokenCopy.title() in self.pos_dict.keys:
-                posCount += self.pos_dict[tokenCopy.title]
+            if tokenCopy.lower() in self.pos_dict.keys():
+                posCount += self.pos_dict[tokenCopy.lower()]
+            if tokenCopy.title() in self.pos_dict.keys():
+                posCount += self.pos_dict[tokenCopy.title()]
             negCount = 0
-            if token in self.neg_dict.keys:
+            if token in self.neg_dict.keys():
                 negCount += self.neg_dict[token]
-            if tokenCopy.lower() in self.neg_dict.keys:
-                negCount += self.neg_dict[tokenCopy.lower]
-            if tokenCopy.title() in self.neg_dict.keys:
-                negCount += self.neg_dict[tokenCopy.title]
+            if tokenCopy.lower() in self.neg_dict.keys():
+                negCount += self.neg_dict[tokenCopy.lower()]
+            if tokenCopy.title() in self.neg_dict.keys():
+                negCount += self.neg_dict[tokenCopy.title()]
             # All-cap means emphasizing, in this improvement attempt we increase the "weight" of all-capped words
             if token.isupper():
                 # if token appears significantly more in pos_dict than in neg_dict, increase its weight in pos_pred
@@ -152,6 +156,7 @@ class Bayes_Classifier:
         # So if we could make the matrix more robust by also altering the values of the synonyms of the words we've seen
         # This could maybe work.
 
+
     def loadFile(self, sFilename):
         """Given a file name, return the contents of the file as a string."""
 
@@ -159,7 +164,7 @@ class Bayes_Classifier:
         sTxt = f.read()
         f.close()
         return sTxt
-    
+
     def save(self, dObj, sFilename):
         """Given an object and a file name, write the object to the file using pickle."""
 
@@ -167,7 +172,7 @@ class Bayes_Classifier:
         p = pickle.Pickler(f)
         p.dump(dObj)
         f.close()
-    
+
     def load(self, sFilename):
         """Given a file name, load and return the object stored in the file."""
 
@@ -178,7 +183,7 @@ class Bayes_Classifier:
         return dObj
 
     def tokenize(self, sText):
-        """Given a string of text sText, returns a list of the individual tokens that 
+        """Given a string of text sText, returns a list of the individual tokens that
         occur in that string (in order)."""
 
         lTokens = []
@@ -192,7 +197,7 @@ class Bayes_Classifier:
                     sToken = ""
                 if c.strip() != "":
                     lTokens.append(str(c.strip()))
-                    
+
         if sToken != "":
             lTokens.append(sToken)
 
@@ -206,7 +211,7 @@ def tenFoldCrossValidation(precisionRecallFileName='precisionRecallFile'):
     for i in range(0,10):
         bs=Bayes_Classifier('pos_dict'+str(i),'neg_dict'+str(i),i)
         lFileList = []
-        for fFileObj in os.walk("movies_reviews/"):
+        for fFileObj in os.walk("../movies_reviews/"):
             lFileList = fFileObj[2]
             break
         # shuffle the list (in the same manner every time) so that there's an equal chance to get positives/negatives
@@ -216,7 +221,7 @@ def tenFoldCrossValidation(precisionRecallFileName='precisionRecallFile'):
         #Initialize counters to calculate precision recall
         falsePos=0.0; falseNeg=0.0; truePos=0.0; trueNeg=0.0
         for fileName in lFileList:
-            result=bs.classify(bs.loadFile("movies_reviews/"+fileName))
+            result=bs.classify(bs.loadFile("../movies_reviews/"+fileName))
             star = fileName[7]
             # If bad review
             if star=='1':
@@ -238,8 +243,7 @@ def tenFoldCrossValidation(precisionRecallFileName='precisionRecallFile'):
         precisionRecallFile.write(str(precision)+','+str(recall)+','+str(f1)+'\n')
         print (str(precision)+','+str(recall)+','+str(f1)+'\n')
 
-
+#NOTE: to use this, put the movies_reviews folder at the previous folder. It's a huge pain for github to load 20000+ files.
 tenFoldCrossValidation()
-
 #bs=Bayes_Classifier()
 #print bs.classify('I love my AI class')
