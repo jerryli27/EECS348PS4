@@ -4,6 +4,8 @@
 #
 #
 
+
+
 import math, os, pickle, re, random
 
 class Bayes_Classifier:
@@ -39,7 +41,7 @@ class Bayes_Classifier:
         # Used for the Kth Cross Validation. K ranges from 0 to 9
         """Trains the Naive Bayes Sentiment Classifier."""
         lFileList = []
-        for fFileObj in os.walk("movies_reviews/"):
+        for fFileObj in os.walk("../movies_reviews/"):
             lFileList = fFileObj[2]
             break
         if k>=0 and k<10:
@@ -52,7 +54,7 @@ class Bayes_Classifier:
             #str(re.match('(?:movies\-)\d+(?:\-)', fileName).group(1))
             # If bad review
             if star=='1':
-                tokens=self.tokenize(self.loadFile("movies_reviews/"+fileName))
+                tokens=self.tokenize(self.loadFile("../movies_reviews/"+fileName))
                 for token in tokens:
                     if token in self.neg_dict.keys():
                         self.neg_dict[token]+=1
@@ -60,7 +62,7 @@ class Bayes_Classifier:
                         self.neg_dict[token]=1
                     self.neg_total+=1
             elif star=='5':
-                tokens=self.tokenize(self.loadFile("movies_reviews/"+fileName))
+                tokens=self.tokenize(self.loadFile("../movies_reviews/"+fileName))
                 for token in tokens:
                     if token in self.pos_dict.keys():
                         self.pos_dict[token]+=1
@@ -166,7 +168,7 @@ def tenFoldCrossValidation(precisionRecallFileName='precisionRecallFile'):
     for i in range(0,10):
         bs=Bayes_Classifier('pos_dict'+str(i),'neg_dict'+str(i),i)
         lFileList = []
-        for fFileObj in os.walk("movies_reviews/"):
+        for fFileObj in os.walk("../movies_reviews/"):
             lFileList = fFileObj[2]
             break
         # shuffle the list (in the same manner every time) so that there's an equal chance to get positives/negatives
@@ -176,7 +178,7 @@ def tenFoldCrossValidation(precisionRecallFileName='precisionRecallFile'):
         #Initialize counters to calculate precision recall
         falsePos=0.0; falseNeg=0.0; truePos=0.0; trueNeg=0.0
         for fileName in lFileList:
-            result=bs.classify(bs.loadFile("movies_reviews/"+fileName))
+            result=bs.classify(bs.loadFile("../movies_reviews/"+fileName))
             star = fileName[7]
             # If bad review
             if star=='1':
@@ -198,8 +200,7 @@ def tenFoldCrossValidation(precisionRecallFileName='precisionRecallFile'):
         precisionRecallFile.write(str(precision)+','+str(recall)+','+str(f1)+'\n')
         print (str(precision)+','+str(recall)+','+str(f1)+'\n')
 
-
+#NOTE: to use this, put the movies_reviews folder at the previous folder. It's a huge pain for github to load 20000+ files.
 tenFoldCrossValidation()
-
 #bs=Bayes_Classifier()
 #print bs.classify('I love my AI class')
