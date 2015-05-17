@@ -8,7 +8,6 @@
 
 
 import math, os, pickle, re, random,copy,struct,time,numpy
-import scanf
 
 class Bayes_Classifier:
 
@@ -23,6 +22,16 @@ class Bayes_Classifier:
         self.neg_dict={}
         self.pos_total=0
         self.neg_total=0
+        # CorrelationMatrix is a matrix-like dictionary that stores the 10 synonyms of almost all words.
+        # It can be used in classifier to decrease the size of corpus we need to feed to the program by adding counts to
+        # not only words that actually occurred, but also its synonyms.
+        # There are two places we could use CorrelationMatrix, one is when we build the dictionary. The other one is
+        # when we are classifying. Now I chose to use it only in classifying. We could use it in both.
+        try:
+            self.correlationMatrix=self.load('correlationMatrix')
+        except:
+            print 'Unable to load pickle files: correlationMatrix!'
+            return
         if os.path.isfile(pos_dict_file_name) and os.path.isfile(neg_dict_file_name):
             try:
                 self.pos_dict=self.load(pos_dict_file_name)
@@ -76,7 +85,6 @@ class Bayes_Classifier:
         print 'pos_dict have '+str(len(self.pos_dict))+' words'
         print 'neg_dict have '+str(len(self.neg_dict))+' words'
 
-
     def classify(self, sText):
         """Given a target string sText, this function returns the most likely document
         class to which the target string belongs (i.e., positive, negative or neutral).
@@ -93,7 +101,7 @@ class Bayes_Classifier:
         # Therefore in this improvement attempt, we only classify the text after "but" and "however"
         # First, we make a copy of the tokens that contains all lowercase words to find the index of any "but" or "after"
         tokensCopy = copy.deepcopy(tokens)
-        for words in tokens:
+        for words in tokensCopy:
             words = words.lower()
         if "but" in tokensCopy:
             butIndex = tokensCopy.index("but")
@@ -106,34 +114,93 @@ class Bayes_Classifier:
             tokenCopy = copy.deepcopy(token)    # for avoiding calling string functions on original token
             # count the total appearance of token in all form (abc, Abc, ABC) in pos_dict and neg_dict
             posCount = 1
-            if token in self.pos_dict.keys():
-                posCount += self.pos_dict[token]
-            if tokenCopy.lower() in self.pos_dict.keys():
-                posCount += self.pos_dict[tokenCopy.lower()]
-            if tokenCopy.title() in self.pos_dict.keys():
-                posCount += self.pos_dict[tokenCopy.title()]
             negCount = 1
-            if token in self.neg_dict.keys():
-                negCount += self.neg_dict[token]
-            if tokenCopy.lower() in self.neg_dict.keys():
-                negCount += self.neg_dict[tokenCopy.lower()]
-            if tokenCopy.title() in self.neg_dict.keys():
-                negCount += self.neg_dict[tokenCopy.title()]
-            # All-cap means emphasizing, in this improvement attempt we increase the "weight" of all-capped words
-            if token.isupper():
-                # if token appears significantly more in pos_dict than in neg_dict, increase its weight in pos_pred
-                if float(posCount)/negCount > 1.2:
-                    pos_pred = pos_pred + math.log(posCount) + math.log(2)
-                    neg_pred += math.log(negCount)
-                elif float(negCount)/posCount > 1.2:
-                    pos_pred += math.log(posCount)
-                    neg_pred = neg_pred + math.log(negCount) + math.log(2)
+
+            if tokenCopy.lower() in self.correlationMatrix.keys():
+                for pair in self.correlationMatrix[tokenCopy.lower()]:
+                    pairToken=pair[0]
+                    pairSimilarity=pair[1]
+                    pairTokenCopy=copy.deepcopy(pairToken)
+                    if pairToken in self.pos_dict.keys():
+                        posCount += self.pos_dict[pairToken]
+                    ##Dont need to check upper or lower because everything in correlationMatrix is lower
+                    #elif pairToken.islower():
+                    if pairTokenCopy.upper() in self.pos_dict.keys():
+                        posCount += self.pos_dict[pairTokenCopy.upper()]
+                    if pairTokenCopy.title() in self.pos_dict.keys():
+                        posCount += self.pos_dict[pairTokenCopy.title()]
+                    if pairToken in self.neg_dict.keys():
+                        negCount += self.neg_dict[pairToken]
+                    #elif pairToken.islower():
+                    if pairTokenCopy.upper() in self.neg_dict.keys():
+                        negCount += self.neg_dict[pairTokenCopy.upper()]
+                    if pairTokenCopy.title() in self.neg_dict.keys():
+                        negCount += self.neg_dict[pairTokenCopy.title()]
+
+            # # All-cap means emphasizing, in this improvement attempt we increase the "weight" of all-capped words
+            # if token.isupper():
+            #     # if token appears significantly more in pos_dict than in neg_dict, increase its weight in pos_pred
+            #     if float(posCount)/negCount > 2:
+            #         pos_pred = pos_pred + math.log(posCount) + math.log(2)
+            #         neg_pred += math.log(negCount)
+            #     elif float(negCount)/posCount > 2:
+            #         pos_pred += math.log(posCount)
+            #         neg_pred = neg_pred + math.log(negCount) + math.log(2)
+            #     else:
+            #         if token in self.pos_dict.keys() or tokenCopy.title() in self.pos_dict.keys() or tokenCopy.lower() in self.pos_dict.keys():
+            #             pos_pred+=math.log(posCount)
+            #         if token in self.neg_dict.keys() or tokenCopy.title() in self.neg_dict.keys() or tokenCopy.lower() in self.neg_dict.keys():
+            #             neg_pred+=math.log(negCount)
+            # else:
+            #     if token in self.pos_dict.keys() or tokenCopy.title() in self.pos_dict.keys():
+            #         pos_pred+=math.log(posCount)
+            #     if token in self.neg_dict.keys() or tokenCopy.title() in self.neg_dict.keys():
+            #         neg_pred+=math.log(negCount)
+            # #else is just *=1, which does nothing
             else:
-                if token in self.pos_dict.keys() or tokenCopy.title() in self.pos_dict.keys():
-                    pos_pred+=math.log(posCount)
-                if token in self.neg_dict.keys() or tokenCopy.title() in self.neg_dict.keys():
-                    neg_pred+=math.log(negCount)
-            #else is just *=1, which does nothing
+                if token in self.pos_dict.keys():
+                    posCount += self.pos_dict[token]
+                if token.isupper():
+                    if tokenCopy.lower() in self.pos_dict.keys():
+                        posCount += self.pos_dict[tokenCopy.lower()]
+                    if tokenCopy.title() in self.pos_dict.keys():
+                        posCount += self.pos_dict[tokenCopy.title()]
+                elif token.islower():
+                    if tokenCopy.upper() in self.pos_dict.keys():
+                        posCount += self.pos_dict[tokenCopy.upper()]
+                    if tokenCopy.title() in self.pos_dict.keys():
+                        posCount += self.pos_dict[tokenCopy.title()]
+                elif token.istitle():
+                    if tokenCopy.upper() in self.pos_dict.keys():
+                        posCount += self.pos_dict[tokenCopy.upper()]
+                    if tokenCopy.lower() in self.pos_dict.keys():
+                        posCount += self.pos_dict[tokenCopy.lower()]
+
+                if token in self.neg_dict.keys():
+                    negCount += self.neg_dict[token]
+                if token.isupper():
+                    if tokenCopy.lower() in self.neg_dict.keys():
+                        negCount += self.neg_dict[tokenCopy.lower()]
+                    if tokenCopy.title() in self.neg_dict.keys():
+                        negCount += self.neg_dict[tokenCopy.title()]
+                elif token.islower():
+                    if tokenCopy.upper() in self.neg_dict.keys():
+                        negCount += self.neg_dict[tokenCopy.upper()]
+                    if tokenCopy.title() in self.neg_dict.keys():
+                        negCount += self.neg_dict[tokenCopy.title()]
+                elif token.istitle():
+                    if tokenCopy.upper() in self.neg_dict.keys():
+                        negCount += self.neg_dict[tokenCopy.upper()]
+                    if tokenCopy.lower() in self.neg_dict.keys():
+                        negCount += self.neg_dict[tokenCopy.lower()]
+
+            if tokenCopy.lower() in self.pos_dict.keys() or tokenCopy.upper() in self.pos_dict.keys() or tokenCopy.title() in self.pos_dict.keys():
+                pos_pred+=math.log(posCount)
+            if tokenCopy.lower() in self.neg_dict.keys() or tokenCopy.upper() in self.neg_dict.keys() or tokenCopy.title() in self.neg_dict.keys():
+                neg_pred+=math.log(negCount)
+
+
+
         #Need to code a Neutral zone
         print 'pos_pred = '+str(pos_pred)
         print 'neg_pred = '+str(neg_pred)
@@ -156,7 +223,6 @@ class Bayes_Classifier:
         # The limit of this matrix is that it will be super sparse given how small our corpus(training data) is.
         # So if we could make the matrix more robust by also altering the values of the synonyms of the words we've seen
         # This could maybe work.
-
 
     def loadFile(self, sFilename):
         """Given a file name, return the contents of the file as a string."""
@@ -244,28 +310,39 @@ def tenFoldCrossValidation(precisionRecallFileName='precisionRecallFile'):
         precisionRecallFile.write(str(precision)+','+str(recall)+','+str(f1)+'\n')
         print (str(precision)+','+str(recall)+','+str(f1)+'\n')
 
-def readBinary(fileName):
-    with open(fileName, "rb") as f:
+def readCSV(fileName):
+    with open(fileName, "r") as f:
         #x=struct.unpack('>q',f.read(8))
         #print x
         #x=struct.unpack('<q',f.read(8))
         #print x
-
-        vocabSize=scanf.fscanf(f,'%i ')[0]
-        vectorLength=scanf.fscanf(f,'%i\n')[0]
+        vocabSize=0
+        vectorLength=0
         vocab={}
-        for i in range(0,vocabSize):
-            vector=[]
-            word=''
-            word=(scanf.fscanf(f,'%s ')[0])
-            for j in range(0,vectorLength):
-                vector.append(struct.unpack('f',f.read(4))[0])
-            scanf.fscanf(f,'\n')
-            vocab[word]=vector
+        count=0
+        for line in f:
+            line=line[:-1]
+            line=line.split(',')
+            if vocabSize==0 and vectorLength==0:
+                vocabSize=int(line[0])
+                vectorLength=int(line[1])
+            else:
+                vector=[]
+                word=line[0]
+                for j in range(1,vectorLength+1):
+                    vector.append(float(line[j]))
+                vectorSum=numpy.sqrt(numpy.dot(vector,vector))
+                for j in range(0,vectorLength):
+                    vector[j]/=vectorSum
+                vocab[word]=vector
+            count+=1
+            if count>30000:
+                break
     return vocabSize,vectorLength,vocab
 
 def generateCorrelationMatrix(vocab):
     correlationMatrix={}
+    count=0
     for word in vocab.keys():
         synonyms=[['',-1]]*10
         for candidate in vocab.keys():
@@ -276,11 +353,35 @@ def generateCorrelationMatrix(vocab):
                     synonyms.pop()
                     synonyms.insert(i,[candidate,similarity])
                     break
-
         correlationMatrix[word]=synonyms
+        count+=1
+        if count%200==0:
+            print str(float(count)/len(vocab.keys())) + '% Completed!'
     return correlationMatrix
 
-
+def generateCorrelationMatrix_ver2(vocab):
+    correlationMatrix=[]
+    for word in vocab.keys()[:30000]:
+        correlationMatrix.append(vocab[word])
+    correlationMatrixTranspose=numpy.array(correlationMatrix)
+    correlationMatrixTranspose=correlationMatrixTranspose.transpose()
+    correlationMatrixProduct=numpy.dot(correlationMatrix,correlationMatrixTranspose)
+    print 'correlationMatrixProduct calculated!'
+    correlationMatrixArgSort=numpy.argsort(correlationMatrixProduct)
+    print 'correlationMatrixArgSort calculated!'
+    correlationMatrix={}
+    count=0
+    for word in vocab.keys()[:30000]:
+        if correlationMatrixArgSort[count][-1]!=count:
+            print 'error'
+        synonyms=[]
+        for i in range(0,10):
+            synonyms.append([vocab.keys()[correlationMatrixArgSort[count][-i-1]],correlationMatrixProduct[count][correlationMatrixArgSort[count][-i-1]]])
+        correlationMatrix[word]=synonyms
+        count+=1
+        if count%200==0:
+            print str(float(count)/len(vocab.keys())) + '% Completed!'
+    return correlationMatrix
 def save(dObj, sFilename):
     """Given an object and a file name, write the object to the file using pickle."""
 
@@ -298,17 +399,21 @@ def load(sFilename):
     f.close()
     return dObj
 
-
-#NOTE: to use this, put the movies_reviews folder at the previous folder. It's a huge pain for github to load 20000+ files.
-#tenFoldCrossValidation()
-#bs=Bayes_Classifier()
-#print bs.classify('I love my AI class')
-
-
 start = time.time()
-vocabSize,vectorLength,vocab=readBinary('trained file 100 noI.bin')
-correlationMatrix=generateCorrelationMatrix(vocab)
-#correlationMatrix=generateCorrelationMatrix({'a':[1,2],'b':[2,3]})
-save(correlationMatrix,'correlationMatrix')
+#NOTE: to use this, put the movies_reviews folder at the previous folder. It's a huge pain for github to load 20000+ files.
+tenFoldCrossValidation()
+
+
+# i=0
+# bs=Bayes_Classifier('pos_dict'+str(i),'neg_dict'+str(i),i)
+# print bs.classify('I love my AI class')
+# while (1):
+#     sentence = str(input('Enter the sentence you would like to classify: '))
+#     print bs.classify(sentence)
+
+#vocabSize,vectorLength,vocab=readCSV('trained file 100 noI.csv')
+#print 'read word vec file'
+#correlationMatrix=generateCorrelationMatrix_ver2(vocab)
+#save(correlationMatrix,'correlationMatrix')
 end = time.time()
 print end - start

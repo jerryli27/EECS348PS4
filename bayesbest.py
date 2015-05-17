@@ -107,12 +107,6 @@ class Bayes_Classifier:
             posCount = 1
             if token in self.pos_dict.keys():
                 posCount += self.pos_dict[token]
-<<<<<<< HEAD
-            if tokenCopy.lower() in self.pos_dict.keys():
-                posCount += self.pos_dict[tokenCopy.lower()]
-            if tokenCopy.title() in self.pos_dict.keys():
-                posCount += self.pos_dict[tokenCopy.title()]
-=======
             if token.isupper():
                 if tokenCopy.lower() in self.pos_dict.keys():
                     posCount += self.pos_dict[tokenCopy.lower()]
@@ -128,8 +122,6 @@ class Bayes_Classifier:
                     posCount += self.pos_dict[tokenCopy.upper()]
                 if tokenCopy.lower() in self.pos_dict.keys():
                     posCount += self.pos_dict[tokenCopy.lower()]
-
->>>>>>> origin/master
             negCount = 1
             if token in self.neg_dict.keys():
                 negCount += self.neg_dict[token]

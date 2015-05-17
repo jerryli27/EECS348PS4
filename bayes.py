@@ -6,7 +6,7 @@
 
 
 
-import math, os, pickle, re, random
+import math, os, pickle, re, random,sys
 
 class Bayes_Classifier:
 
@@ -92,8 +92,8 @@ class Bayes_Classifier:
                 neg_pred+=math.log(self.neg_dict[token])
             #else is just *=1, which does nothing
         #Need to code a Neutral zone
-        print 'pos_pred = '+str(pos_pred)
-        print 'neg_pred = '+str(neg_pred)
+        #print 'pos_pred = '+str(pos_pred)
+        #print 'neg_pred = '+str(neg_pred)
         if pos_pred>neg_pred:
             return 'positive'
         elif pos_pred<neg_pred:
@@ -113,6 +113,80 @@ class Bayes_Classifier:
         # The limit of this matrix is that it will be super sparse given how small our corpus(training data) is.
         # So if we could make the matrix more robust by also altering the values of the synonyms of the words we've seen
         # This could maybe work.
+    # This function will print out the log of each word if we get the answer wrong
+    def analysis(self,result, sText):
+        """Given a target string sText, this function returns the most likely document
+        class to which the target string belongs (i.e., positive, negative or neutral).
+        """
+        tokens=self.tokenize(sText)
+        # The log of likelihood of the text being positive is just log of all frequencies,
+        # which is log(number_of_times_this_word_appear/total_number_of_words_in_positive).
+        # We could simplify this to sum(log(number_of_times_this_word_appear))-length(text)*log(total_num_of...)
+
+        pos_pred=-math.log(self.pos_total)*len(tokens)
+        neg_pred=-math.log(self.neg_total)*len(tokens)
+        # To view the individual term's contribution, we have to calculate
+        # log(number_of_times_this_word_appear)- log(total_number_of_words_in_positive).
+        pos_total_log=math.log(self.pos_total)
+        neg_total_log=math.log(self.neg_total)
+        # This list records the log of each token
+        pos_log_list=[]
+        neg_log_list=[]
+        for token in tokens:
+            if token in self.pos_dict.keys():
+                temp=math.log(self.pos_dict[token])
+                pos_pred+=temp
+                # append log(number_of_times_this_word_appear)- log(total_number_of_words_in_positive).
+                pos_log_list.append(math.ceil((temp-pos_total_log)*100)/100)
+            else:
+                # append - log(total_number_of_words_in_positive).
+                # This is not mathematically correct, because we are assuming log(number_of_times_this_word_appear)=0
+                # Which is somewhat equal to the effect of smoothing, taking number_of_times_this_word_appear=1
+                pos_log_list.append(math.ceil((-pos_total_log)*100)/100)
+            if token in self.neg_dict.keys():
+                temp=math.log(self.neg_dict[token])
+                neg_pred+=temp
+                neg_log_list.append(math.ceil((temp-neg_total_log)*100)/100)
+            else:
+                neg_log_list.append(math.ceil((-neg_total_log)*100)/100)
+            #else is just *=1, which does nothing
+        #Need to code a Neutral zone
+        print 'pos_pred = '+str(pos_pred)
+        print 'neg_pred = '+str(neg_pred)
+
+        if result=='negative':
+            sys.stdout.write('False Negative:        ')
+        else:
+            sys.stdout.write('False Positive:        ')
+        for token in tokens:
+            tempString='%.12s' %token
+            tempString+=' '*(12-len(tempString))
+            sys.stdout.write(tempString)
+        sys.stdout.write('\n')
+
+        tempString='Pos logs:    '
+        tempString+=' '*(23-len(tempString))
+        sys.stdout.write(tempString)
+        counter=0
+        for token in tokens:
+            strFormat='%.2f'%pos_log_list[counter]
+            strFormat+=' '*(12-len(strFormat))
+            sys.stdout.write(strFormat)
+            counter+=1
+        sys.stdout.write('\n')
+
+        tempString='Neg logs:    '
+        tempString+=' '*(23-len(tempString))
+        sys.stdout.write(tempString)
+        counter=0
+        for token in tokens:
+            strFormat='%.2f'%neg_log_list[counter]
+            strFormat+=' '*(12-len(strFormat))
+            sys.stdout.write(strFormat)
+            counter+=1
+        sys.stdout.write('\n')
+
+        return
 
     def loadFile(self, sFilename):
         """Given a file name, return the contents of the file as a string."""
@@ -160,7 +234,7 @@ class Bayes_Classifier:
 
         return lTokens
 
-def tenFoldCrossValidation(precisionRecallFileName='precisionRecallFile'):
+def tenFoldCrossValidation(precisionRecallFileName='precisionRecallFile',trueFalseTableFileName='trueFalseTable'):
     # Initialize Precisions and Recall values
     precision=0.0
     recall=0.0
@@ -177,13 +251,16 @@ def tenFoldCrossValidation(precisionRecallFileName='precisionRecallFile'):
         lFileList=lFileList[i*len(lFileList)/10:(i+1)*len(lFileList)/10]
         #Initialize counters to calculate precision recall
         falsePos=0.0; falseNeg=0.0; truePos=0.0; trueNeg=0.0
+        counter=0.0
         for fileName in lFileList:
-            result=bs.classify(bs.loadFile("../movies_reviews/"+fileName))
+            content=bs.loadFile("../movies_reviews/"+fileName)
+            result=bs.classify(content)
             star = fileName[7]
             # If bad review
             if star=='1':
                 if result=='positive':
                     falsePos+=1
+                    #bs.analysis(result,content)
                 elif result=='negative':
                     trueNeg+=1
             elif star=='5':
@@ -191,8 +268,15 @@ def tenFoldCrossValidation(precisionRecallFileName='precisionRecallFile'):
                     truePos+=1
                 elif result=='negative':
                     falseNeg+=1
+                    #bs.analysis(result,content)
+            counter+=1
+            if counter%30==0:
+                sys.stdout.write('\r'+str(counter/len(lFileList)*100)+'% Done')
         precision+=(truePos/(truePos+falsePos)+trueNeg/(trueNeg+falseNeg))/2
         recall+=(truePos/(truePos+falseNeg)+trueNeg/(trueNeg+falsePos))/2
+        with open(trueFalseTableFileName,'a') as trueFalseTableFile:
+            trueFalseTableFile.write(str(truePos)+','+str(falsePos)+','+str(trueNeg)+','+str(falseNeg)+'\n')
+            print (str(truePos)+','+str(falsePos)+','+str(trueNeg)+','+str(falseNeg)+'\n')
     precision/=10
     recall/=10
     f1=2*precision*recall/(precision+recall)
@@ -204,3 +288,5 @@ def tenFoldCrossValidation(precisionRecallFileName='precisionRecallFile'):
 tenFoldCrossValidation()
 #bs=Bayes_Classifier()
 #print bs.classify('I love my AI class')
+
+#I suspect that because the positive reviews have way more words (lower -log(total) value) than negative reviews,the system is biased towards negative

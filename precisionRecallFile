@@ -1,11 +1,14 @@
-<<<<<<< HEAD
 precision,recall,f1
 For Bayes tested on 2015/05/13
 0.723427515842,0.842982546918,0.778642558948
 
 For BayesBest tested on 2015/05/15 11:30
 0.703301328726,0.816693998529,0.755768079058
-=======
-            if tokenCopy.lower() in self.neg_dict.keys() or tokenCopy.upper() in self.neg_dict.keys() or tokenCopy.title() in self.neg_dict.keys():
-                neg_pred+=math.log(self.neg_dict[token])  
->>>>>>> origin/master
+
+For BayesBest tested on 2015/05/16 15:05
+0.682709590119,0.788133935242,0.731643559101
+
+For BayesTest tested on 2015/05/16 22:46
+0.67071214031,0.768108498581,0.716113852065
+
+
