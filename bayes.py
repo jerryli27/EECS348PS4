@@ -80,7 +80,7 @@ class Bayes_Classifier:
                     result=self.gradientDescent('negative',content)
                 elif star=='5':
                     result=self.gradientDescent('positive',content)
-            sys.stdout.write('\r Training'+str(i*40)+'% Done')
+            sys.stdout.write('\r Training'+str(i/40.0)+'% Done')
 
         self.save(self.pos_dict,pos_dict_file_name)
         self.save(self.neg_dict,neg_dict_file_name)
@@ -342,13 +342,13 @@ class Bayes_Classifier:
                 sToken += c
             else:
                 if sToken != "":
-                    lTokens.append(sToken)
+                    lTokens.append(sToken.lower())
                     sToken = ""
                 if c.strip() != "":
-                    lTokens.append(str(c.strip()))
+                    lTokens.append(str(c.strip().lower()))
                     
         if sToken != "":
-            lTokens.append(sToken)
+            lTokens.append(sToken.lower())
 
         return lTokens
 
